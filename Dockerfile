@@ -1,77 +1,72 @@
-FROM php:7.1-apache
+FROM bravado/php:7.3
 
-LABEL vendor="Mautic"
-LABEL maintainer="Luiz Eduardo Oliveira Fonseca <luiz@powertic.com>"
+USER root
 
 # Install PHP extensions
 RUN apt-get update && apt-get install --no-install-recommends -y \
     cron \
-    git \
-    wget \
-    sudo \
-    libc-client-dev \
-    libicu-dev \
-    libkrb5-dev \
-    libmcrypt-dev \
-    libssl-dev \
-    libz-dev \
     unzip \
     zip \
     && apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false \
     && rm -rf /var/lib/apt/lists/* \
-    && rm /etc/cron.daily/*
-
-RUN docker-php-ext-configure imap --with-imap --with-imap-ssl --with-kerberos \
-    && docker-php-ext-configure opcache --enable-opcache \
-    && docker-php-ext-install imap intl mbstring mcrypt mysqli pdo_mysql zip opcache bcmath\
-    && docker-php-ext-enable imap intl mbstring mcrypt mysqli pdo_mysql zip opcache bcmath
-
-# Install composer
-RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/bin --filename=composer
-
-# Define Mautic volume to persist data
-VOLUME /var/www/html
+    && rm /etc/cron.*/*
 
 # Define Mautic version and expected SHA1 signature
-ENV MAUTIC_VERSION 2.16.0
-ENV MAUTIC_SHA1 94ced007fd99e63eaeec435012784b6bbe834b84
+ENV MAUTIC_VERSION 3.0.2
+ENV MAUTIC_SHA1 225dec8fbac05dfb77fdd7ed292a444797db215f
+
+# Download package and extract to web volume
+RUN curl -o /usr/src/mautic.zip -SL https://github.com/mautic/mautic/releases/download/${MAUTIC_VERSION}/${MAUTIC_VERSION}.zip \
+    && echo "$MAUTIC_SHA1 /usr/src/mautic.zip" | sha1sum -c - \
+    && cd /var/www/html \
+    && unzip /usr/src/mautic.zip \
+    && rm -f /usr/src/mautic.zip
 
 # By default enable cron jobs
 ENV MAUTIC_RUN_CRON_JOBS true
 
 # Setting an root user for test
-ENV MAUTIC_DB_USER root
+ENV MAUTIC_DB_HOST mysql
+ENV MAUTIC_DB_TABLE_PREFIX ""
+ENV MAUTIC_DB_PORT 3306
 ENV MAUTIC_DB_NAME mautic
+ENV MAUTIC_DB_USER root
+ENV MAUTIC_DB_PASSWORD root
+ENV TRUSTED_PROXIES ""
 
-# Setting PHP properties
-ENV PHP_INI_DATE_TIMEZONE='UTC' \
-    PHP_MEMORY_LIMIT=512M \
-    PHP_MAX_UPLOAD=128M \
-    PHP_MAX_EXECUTION_TIME=300
-
-# Download package and extract to web volume
-RUN curl -o mautic.zip -SL https://github.com/mautic/mautic/releases/download/${MAUTIC_VERSION}/${MAUTIC_VERSION}.zip \
-    && echo "$MAUTIC_SHA1 *mautic.zip" | sha1sum -c - \
-    && mkdir /usr/src/mautic \
-    && unzip mautic.zip -d /usr/src/mautic \
-    && rm mautic.zip \
-    && chown -R www-data:www-data /usr/src/mautic
 
 # Copy init scripts and custom .htaccess
-COPY docker-entrypoint.sh /entrypoint.sh
-COPY makeconfig.php /makeconfig.php
-COPY makedb.php /makedb.php
-COPY mautic.crontab /etc/cron.d/mautic
-RUN chmod 644 /etc/cron.d/mautic
+# COPY docker-entrypoint.sh /entrypoint.sh
+# COPY makeconfig.php /makeconfig.php
+# COPY makedb.php /makedb.php
+# COPY mautic.crontab /etc/cron.d/mautic
+# RUN chmod 644 /etc/cron.d/mautic
 
 # Enable Apache Rewrite Module
-RUN a2enmod rewrite
+# RUN a2enmod rewrite
 
 # Apply necessary permissions
-RUN ["chmod", "+x", "/entrypoint.sh"]
-ENTRYPOINT ["/entrypoint.sh"]
+# RUN ["chmod", "+x", "/entrypoint.sh"]
+# ENTRYPOINT ["/entrypoint.sh"]
+#
+# CMD ["apache2-foreground"]
 
-CMD ["apache2-foreground"]
+# ENV PUID=1000 \
+# PGID=10000
 
-ENV PUID=1000 \
-PGID=1000
+ENV APACHE_RUN_USER app
+ENV PHP_MEMORY_LIMIT 512M
+
+RUN mv /var/www/html/media/images /var/www/html/_images \
+	&& rm -rf /var/www/html/media/files \
+	&& rm -rf /var/www/html/var \
+	&& mkdir /var/www/local /var/www/local/images /var/www/local/files /var/www/local/var \
+	&& ln -s /var/www/local/config.php /var/www/html/app/config/local.php \
+	&& ln -s /var/www/local/images /var/www/html/media/images \
+	&& ln -s /var/www/local/files /var/www/html/media/files \
+	&& ln -s /var/www/local/var /var/www/html/var \
+	&& chown app:app /var/www/local
+
+ADD etc /etc
+
+USER app
