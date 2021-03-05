@@ -6,10 +6,20 @@ DOCKER_TAG ?= $(DOCKER_IMAGE):$(shell echo ${GIT_BRANCH} | sed -e "s%^master$$%l
 default: build
 
 build:
-	docker build -t ${DOCKER_TAG} .
+	docker-compose build
 
-run: PUID=1000
-run: PGID=1000
-run: PORT=8082
-run:
-	docker run -it --name mautic --rm -v mautic:/var/www/local -e PUID=${PUID} -e PGID=${PGID} -p ${PORT}:80 --link mysql:mysql -e MAUTIC_DB_PASSWORD=root -e MAUTIC_DB_HOST=mysql:3306 ${DOCKER_TAG} ${CMD}
+start:
+	docker-compose up -d
+
+stop:
+	docker-compose down
+
+purge:
+	docker-compose down --volumes
+
+shell: USER=app
+shell:
+	docker-compose exec --user ${USER} mautic bash
+
+logs:
+	docker-compose logs -f mautic

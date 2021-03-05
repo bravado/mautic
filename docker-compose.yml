@@ -1,0 +1,34 @@
+---
+version: '3'
+
+volumes:
+  mysql:
+  data:
+
+services:
+  mautic:
+    image: ${DOCKER_TAG:-bravado/mautic}
+    build: .
+    depends_on:
+      - mysql
+    ports:
+      - ${PORT:-8080}:80
+    environment:
+      MAUTIC_DB_HOST: mysql
+      MAUTIC_DB_NAME: mautic
+      MAUTIC_DB_USER: mautic
+      MAUTIC_DB_PASSWORD: mautic
+      MAUTIC_RUN_CRON_JOBS: "true"
+      PHP_INI_DATE_TIMEZONE: America/Sao_Paulo
+    volumes:
+      - data:/var/www/local
+      - ./etc/mautic/makeconfig.php:/etc/mautic/makeconfig.php
+  mysql:
+    image: mariadb:10.2
+    volumes:
+      - mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      MYSQL_DATABASE: mautic
+      MYSQL_USER: mautic
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mautic}

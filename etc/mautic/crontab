@@ -1,0 +1,20 @@
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+8,23,38,52 * * * *     app   php /var/www/html/bin/console mautic:segments:update > /var/log/cron.pipe 2>&1
+       */5 * * * *     app   php /var/www/html/bin/console mautic:import > /var/log/cron.pipe 2>&1
+5,20,35,50 * * * *     app   php /var/www/html/bin/console mautic:campaigns:rebuild > /var/log/cron.pipe 2>&1
+2,17,32,47 * * * *     app   php /var/www/html/bin/console mautic:campaigns:trigger > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     app   php /var/www/html/bin/console mautic:messages:send > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     app   php /var/www/html/bin/console mautic:emails:send > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     app   php /var/www/html/bin/console mautic:email:fetch > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     app   php /var/www/html/bin/console mautic:social:monitoring > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     app   php /var/www/html/bin/console mautic:webhooks:process > /var/log/cron.pipe 2>&1
+0,15,30,45 * * * *     app   php /var/www/html/bin/console mautic:broadcasts:send > /var/log/cron.pipe 2>&1
+         * 1 * * *     app   php /var/www/html/bin/console mautic:maintenance:cleanup --days-old=365 > /var/log/cron.pipe 2>&1
+        0 4 15 * *     app   php /var/www/html/bin/console mautic:iplookup:download > /var/log/cron.pipe 2>&1
+       */5 * * * *     app   php /var/www/html/bin/console mautic:reports:scheduler > /var/log/cron.pipe 2>&1
+        0 5 10 * *     app   php /var/www/html/bin/console mautic:unusedip:delete > /var/log/cron.pipe 2>&1
+# cleanup old logs
+         * 1 * * *     app   find /var/www/local/var/logs/ -mtime +30 -delete > /var/log/cron.pipe 2>&1
+# download geoip db on start if it does not exist
+@reboot                app   [[ -d /var/www/html/app/cache/ip_data ]] || php /var/www/html/bin/console mautic:iplookup:download > /var/log/cron.pipe 2>&1

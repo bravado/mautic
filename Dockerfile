@@ -12,8 +12,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm /etc/cron.*/*
 
 # Define Mautic version and expected SHA1 signature
-ENV MAUTIC_VERSION 3.0.2
-ENV MAUTIC_SHA1 225dec8fbac05dfb77fdd7ed292a444797db215f
+ENV MAUTIC_VERSION 3.3.1
+ENV MAUTIC_SHA1 eeb751abe0cd17de90a61b48ee8c306b50bd2226
 
 # Download package and extract to web volume
 RUN curl -o /usr/src/mautic.zip -SL https://github.com/mautic/mautic/releases/download/${MAUTIC_VERSION}/${MAUTIC_VERSION}.zip \
@@ -23,36 +23,18 @@ RUN curl -o /usr/src/mautic.zip -SL https://github.com/mautic/mautic/releases/do
     && rm -f /usr/src/mautic.zip
 
 # By default enable cron jobs
-ENV MAUTIC_RUN_CRON_JOBS true
+ENV CRON_ENABLE true
 
-# Setting an root user for test
+# All MAUTIC_* env vars are written to the local config file
 ENV MAUTIC_DB_HOST mysql
 ENV MAUTIC_DB_TABLE_PREFIX ""
 ENV MAUTIC_DB_PORT 3306
 ENV MAUTIC_DB_NAME mautic
 ENV MAUTIC_DB_USER root
 ENV MAUTIC_DB_PASSWORD root
-ENV TRUSTED_PROXIES ""
-
-
-# Copy init scripts and custom .htaccess
-# COPY docker-entrypoint.sh /entrypoint.sh
-# COPY makeconfig.php /makeconfig.php
-# COPY makedb.php /makedb.php
-# COPY mautic.crontab /etc/cron.d/mautic
-# RUN chmod 644 /etc/cron.d/mautic
-
-# Enable Apache Rewrite Module
-# RUN a2enmod rewrite
-
-# Apply necessary permissions
-# RUN ["chmod", "+x", "/entrypoint.sh"]
-# ENTRYPOINT ["/entrypoint.sh"]
-#
-# CMD ["apache2-foreground"]
-
-# ENV PUID=1000 \
-# PGID=10000
+ENV MAUTIC_DB_BACKUP_TABLES 0
+ENV MAUTIC_DB_BACKUP_PREFIX bak_
+ENV MAUTIC_TRUSTED_PROXIES '[]'
 
 ENV APACHE_RUN_USER app
 ENV PHP_MEMORY_LIMIT 512M
@@ -69,4 +51,7 @@ RUN mv /var/www/html/media/images /var/www/html/_images \
 
 ADD etc /etc
 
+RUN for i in $(find /var/www/html/_images -maxdepth 1 -mindepth 1 ! -name '.*'); \
+	do echo "Alias /media/images/$(basename $i) $i"; \
+	done >> /etc/apache2/conf-enabled/mautic.conf
 USER app

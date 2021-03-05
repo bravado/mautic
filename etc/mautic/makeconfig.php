@@ -8,19 +8,15 @@ $parameters = array(
 	'install_source' => 'Docker'
 );
 
-//foreach($_ENV as $key => $val) {
-//	if(substr($key,0, 7) == 'MAUTIC_') {
-//		$parameters[strtolower(substr($key, 6))] = empty($val) ? null : $val;
-//	}
-//}
-
-if(!empty($_ENV['TRUSTED_PROXIES'])) {
-    $proxies = explode(',', $_ENV['TRUSTED_PROXIES']);
-    $parameters['trusted_proxies'] = $proxies;
-}
-
-if(array_key_exists('PHP_TIMEZONE', $_ENV)) {
-    $parameters['default_timezone'] = $_ENV['PHP_TIMEZONE'];
+foreach(getenv() as $key => $val) {
+	if(substr($key,0, 7) == 'MAUTIC_') {
+		if($key == 'MAUTIC_TRUSTED_PROXIES') {
+			$val = json_decode($val);
+		}
+		$parameters[strtolower(substr($key, 7))] = empty($val) && !is_numeric($val) && !is_array($val) ? null : $val;
+	} elseif($key == 'PHP_TIMEZONE') {
+		$parameters['default_timezone'] = $_ENV['PHP_TIMEZONE'];
+	}
 }
 
 $path     = '/var/www/local/config.php';
