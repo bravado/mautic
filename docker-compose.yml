@@ -18,11 +18,8 @@ services:
       MAUTIC_DB_NAME: mautic
       MAUTIC_DB_USER: mautic
       MAUTIC_DB_PASSWORD: mautic
-      MAUTIC_RUN_CRON_JOBS: "true"
-      PHP_INI_DATE_TIMEZONE: America/Sao_Paulo
     volumes:
       - data:/var/www/local
-      - ./etc/mautic/makeconfig.php:/etc/mautic/makeconfig.php
   mysql:
     image: mariadb:10.2
     volumes:
