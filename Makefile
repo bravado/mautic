@@ -6,7 +6,7 @@ DOCKER_TAG ?= $(DOCKER_IMAGE):$(shell echo ${GIT_BRANCH} | sed -e "s%^master$$%l
 default: build
 
 build:
-	docker-compose build
+	DOCKER_TAG=${DOCKER_TAG} docker-compose build
 
 start:
 	docker-compose up -d

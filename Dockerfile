@@ -42,12 +42,14 @@ ENV PHP_MEMORY_LIMIT 512M
 RUN mv /var/www/html/media/images /var/www/html/_images \
 	&& rm -rf /var/www/html/media/files \
 	&& rm -rf /var/www/html/var \
-	&& mkdir /var/www/local /var/www/local/images /var/www/local/files /var/www/local/var \
+	&& rm -rf /var/www/html/translations \
+	&& mkdir /var/www/local /var/www/local/images /var/www/local/translations /var/www/local/files /var/www/local/var \
 	&& ln -s /var/www/local/config.php /var/www/html/app/config/local.php \
 	&& ln -s /var/www/local/images /var/www/html/media/images \
 	&& ln -s /var/www/local/files /var/www/html/media/files \
 	&& ln -s /var/www/local/var /var/www/html/var \
-	&& chown app:app /var/www/local
+	&& ln -s /var/www/local/translations /var/www/html/translations \
+	&& chown app:app /var/www/local -R
 
 ADD etc /etc
 
